@@ -1,0 +1,63 @@
+# Code Janitor Default Configuration
+
+# Linting Phase Configuration
+linter:
+  enabled: true
+  auto_fix: true
+  max_line_length: 120
+  target_python_version: "3.10"
+  
+  # Ruff-specific rules (can be enabled/disabled)
+  rules:
+    E: true    # Errors
+    W: true    # Warnings
+    F: true    # Pyflakes
+    I: true    # Isort
+    N: true    # Pep8-naming
+    UP: true   # Pyupgrade
+    B: true    # Flake8-bugbear
+
+# Static Analysis Phase Configuration
+analyzer:
+  enabled: true
+  
+  # Code Smell Detection Thresholds
+  max_nesting_depth: 4          # Maximum nested control structures
+  max_function_lines: 50        # Maximum lines in a function
+  max_cyclomatic_complexity: 10 # Maximum complexity score
+  
+  # Enable specific checks
+  security_checks: true
+  complexity_checks: true
+  dead_code_detection: true
+  duplicate_detection: false    # Expensive, off by default
+
+# AI Configuration
+ai:
+  provider: "openai"            # openai, anthropic, ollama
+  model: "gpt-4"
+  api_key: null                 # Set via environment or config
+  max_retries: 3
+  timeout_seconds: 60
+  max_tokens: 4000
+  temperature: 0.2
+
+# Validation Loop Configuration
+validator:
+  run_linter_after: true
+  run_static_analysis: true
+  run_tests: true
+  max_validation_retries: 2
+  fail_on_security_issues: true
+
+# Backup Configuration
+backup:
+  enabled: true
+  backup_dir: ".janitor_backups"
+  max_backups: 5
+
+# Output Configuration
+output:
+  format: "text"               # text, json, html
+  verbose: false
+  show_diff: false

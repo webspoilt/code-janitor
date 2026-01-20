@@ -1,0 +1,22 @@
+# Code Janitor Configuration
+
+linter:
+  enabled: true
+  auto_fix: true
+  max_line_length: 120
+
+analyzer:
+  max_nesting_depth: 4
+  max_function_lines: 50
+  max_cyclomatic_complexity: 10
+  security_checks: true
+
+ai:
+  provider: ollama
+  model: llama3  # Change to your preferred model
+  temperature: 0.2
+
+backup:
+  enabled: true
+  backup_dir: .janitor_backups
+  max_backups: 5

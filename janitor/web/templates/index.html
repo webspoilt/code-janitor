@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Janitor - AI Code Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.3);
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        * { font-family: 'Inter', system-ui, sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-bar { transition: width 0.3s ease; }
+        
+        .code-editor {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Accessing local API */
+        .status-online { background: var(--accent); }
+        .status-offline { background: var(--danger); }
+    </style>
+</head>
+<body class="overflow-hidden">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-80 glass border-r border-gray-700 flex flex-col">
+            <!-- Logo -->
+            <div class="p-6 border-b border-gray-700">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold">Code Janitor</h1>
+                        <p class="text-xs text-gray-400">God Mode Active</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hardware Monitor -->
+            <div class="p-4 border-b border-gray-700">
+                <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Hardware Status</h2>
+                
+                <!-- CPU -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>CPU Load</span>
+                        <span id="cpu-usage" class="mono text-sm">0%</span>
+                    </div>
+                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div id="cpu-bar" class="h-full bg-orange-500 metric-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- RAM -->
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>RAM Usage</span>
+                        <span id="ram-usage" class="mono text-sm">0%</span>
+                    </div>
+                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div id="ram-bar" class="h-full bg-blue-500 metric-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Queue / Info -->
+            <div class="flex-1 p-4 overflow-auto">
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <h3 class="text-sm font-bold text-gray-300 mb-2">Instructions</h3>
+                    <ul class="text-xs text-gray-400 space-y-2 list-disc pl-4">
+                        <li>Upload a code file (.py, .js, .ts)</li>
+                        <li>Format: Auto-linting included</li>
+                        <li>Analysis: Security & Code Quality</li>
+                        <li>AI: Auto-refactor with local LLM</li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="h-16 glass border-b border-gray-700 flex items-center justify-between px-6">
+                <div class="flex items-center gap-4">
+                    <h2 id="current-file" class="text-lg font-medium">No file selected</h2>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="btn-analyze" disabled class="px-6 py-2 text-sm bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-600 rounded transition">
+                        Analyze File
+                    </button>
+                </div>
+            </header>
+
+            <!-- Drop Zone / Content -->
+            <div id="content-area" class="flex-1 overflow-hidden relative">
+                
+                <!-- Drop Overlay -->
+                <div id="drop-zone" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-10">
+                    <div class="w-24 h-24 mb-6 rounded-2xl border-2 border-dashed border-gray-600 flex items-center justify-center">
+                        <svg class="w-12 h-12 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <p class="text-gray-400">Drag & Drop code file here</p>
+                    <input type="file" id="file-input" class="hidden">
+                    <button onclick="document.getElementById('file-input').click()" class="mt-4 px-4 py-2 bg-gray-800 rounded text-sm hover:bg-gray-700">Browse Files</button>
+                </div>
+
+                <!-- Editor View (Hidden initially) -->
+                <div id="editor-view" class="h-full flex hidden">
+                    <div class="flex-1 flex flex-col border-r border-gray-700">
+                        <div class="p-2 bg-gray-800 text-xs font-mono text-gray-400">Original Code</div>
+                        <div id="code-display" class="flex-1 p-4 overflow-auto code-editor bg-gray-900 whitespace-pre"></div>
+                    </div>
+                    <div class="w-1/3 bg-gray-800 border-l border-gray-700 flex flex-col">
+                        <div class="p-3 border-b border-gray-700 font-bold">Analysis Results</div>
+                        <div id="analysis-results" class="flex-1 p-4 overflow-auto space-y-4">
+                            <!-- Results go here -->
+                        </div>
+                        <div class="p-4 border-t border-gray-700">
+                            <button id="btn-refactor" class="w-full py-2 bg-purple-600 hover:bg-purple-500 rounded text-white text-sm">
+                                Auto-Refactor with AI
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const editorView = document.getElementById('editor-view');
+        const codeDisplay = document.getElementById('code-display');
+        const btnAnalyze = document.getElementById('btn-analyze');
+        const btnRefactor = document.getElementById('btn-refactor');
+        
+        let currentCode = "";
+        let currentFile = null;
+
+        // WebSocket for Hardware Stats
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws/logs`);
+        
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'heartbeat') {
+                updateHardware(data.data);
+            }
+        };
+
+        function updateHardware(stats) {
+            document.getElementById('cpu-usage').textContent = `${stats.cpu.percent}%`;
+            document.getElementById('cpu-bar').style.width = `${stats.cpu.percent}%`;
+            
+            document.getElementById('ram-usage').textContent = `${stats.ram.percent}%`;
+            document.getElementById('ram-bar').style.width = `${stats.ram.percent}%`;
+        }
+
+        // File Drag & Drop
+        dropZone.addEventListener('dragover', (e) => e.preventDefault());
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        function handleFile(file) {
+            if (!file) return;
+            currentFile = file;
+            document.getElementById('current-file').textContent = file.name;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentCode = e.target.result;
+                codeDisplay.textContent = currentCode;
+                dropZone.classList.add('hidden');
+                editorView.classList.remove('hidden');
+                btnAnalyze.disabled = false;
+            };
+            reader.readAsText(file);
+        }
+
+        // Analysis
+        btnAnalyze.addEventListener('click', async () => {
+            if (!currentFile) return;
+            btnAnalyze.textContent = "Analyzing...";
+            btnAnalyze.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('file', currentFile);
+            
+            try {
+                const res = await fetch('/api/analyze', { method: 'POST', body: formData });
+                const data = await res.json();
+                renderResults(data);
+            } catch (e) {
+                alert("Analysis failed");
+            } finally {
+                btnAnalyze.textContent = "Analyze File";
+                btnAnalyze.disabled = false;
+            }
+        });
+
+        // Refactor
+        btnRefactor.addEventListener('click', async () => {
+            btnRefactor.textContent = "Refactoring (this may take time)...";
+            btnRefactor.disabled = true;
+            
+            try {
+                const res = await fetch('/api/ai/refactor', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ code: currentCode })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    codeDisplay.textContent = data.response;
+                    alert("Refactoring Complete!");
+                } else {
+                    alert("Refactoring failed: " + data.error);
+                }
+            } catch (e) {
+                alert("Error calling refactoring API");
+            } finally {
+                btnRefactor.textContent = "Auto-Refactor with AI";
+                btnRefactor.disabled = false;
+            }
+        });
+
+        function renderResults(data) {
+            const container = document.getElementById('analysis-results');
+            container.innerHTML = '';
+            
+            if (data.summary.total === 0) {
+                container.innerHTML = '<div class="text-green-400 text-sm">No issues found! Clean code.</div>';
+                return;
+            }
+
+            // Security
+            if (data.security_issues.length > 0) {
+                const secHeader = document.createElement('div');
+                secHeader.className = "text-red-400 text-xs font-bold uppercase mt-2";
+                secHeader.textContent = `Security (${data.security_issues.length})`;
+                container.appendChild(secHeader);
+                
+                data.security_issues.forEach(issue => {
+                    const el = document.createElement('div');
+                    el.className = "bg-red-900/20 p-2 rounded text-xs text-red-200 mt-1 border border-red-900/50";
+                    el.textContent = `L${issue.line}: ${issue.message}`;
+                    container.appendChild(el);
+                });
+            }
+
+            // Smells / General
+            if (data.code_smells.length > 0 || data.issues.length > 0) {
+                const genHeader = document.createElement('div');
+                genHeader.className = "text-yellow-400 text-xs font-bold uppercase mt-4";
+                genHeader.textContent = "Code Quality / Smells";
+                container.appendChild(genHeader);
+                
+                [...data.code_smells, ...data.issues].forEach(issue => {
+                    const el = document.createElement('div');
+                    el.className = "bg-yellow-900/20 p-2 rounded text-xs text-yellow-200 mt-1 border border-yellow-900/50";
+                    el.textContent = `L${issue.line}: ${issue.message}`;
+                    container.appendChild(el);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
