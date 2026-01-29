@@ -32,7 +32,10 @@ resource_manager = ResourceManager()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Initializing Code Janitor Web...")
-    init_db()
+    try:
+        init_db()
+    except Exception as e:
+        logger.error(f"DB Init failed (non-fatal for UI load): {e}")
     yield
     logger.info("Shutting down...")
 
@@ -44,8 +47,12 @@ STATIC_DIR = BASE_DIR / "static"
 TEMPLATE_DIR = BASE_DIR / "templates"
 
 # Create directories if not exist
-STATIC_DIR.mkdir(parents=True, exist_ok=True)
-TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
+# Create directories if not exist (surpressed for Vercel/read-only)
+try:
+    STATIC_DIR.mkdir(parents=True, exist_ok=True)
+    TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
+except (OSError, PermissionError):
+    logger.warning("Could not create static/template dirs (likely read-only fs)")
 
 # Mounts
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -75,9 +82,14 @@ async def analyze_file(file: UploadFile = File(...)):
         content = await file.read()
         code = content.decode('utf-8')
         
-        # Create temp file for analysis (tools expect path)
-        temp_path = Path(f"temp_{file.filename}")
-        with open(temp_path, "w", encoding="utf-8") as f:
+        code = content.decode('utf-8')
+        
+        # Create temp file for analysis (use /tmp for Vercel)
+        import tempfile
+        fd, temp_path_str = tempfile.mkstemp(suffix=f"_{file.filename}", text=True)
+        temp_path = Path(temp_path_str)
+        
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(code)
             
         try:
@@ -136,8 +148,12 @@ async def ai_refactor(request: dict):
         return JSONResponse(status_code=400, content={"error": "No code provided"})
 
     # Create temp file
-    temp_path = Path("temp_refactor.py") 
-    with open(temp_path, "w", encoding="utf-8") as f:
+    # Create temp file
+    import tempfile
+    fd, temp_path_str = tempfile.mkstemp(suffix="_refactor.py", text=True)
+    temp_path = Path(temp_path_str)
+    
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(code)
         
     try:
