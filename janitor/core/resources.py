@@ -6,10 +6,8 @@ import logging
 import psutil
 from dataclasses import dataclass, asdict
 from typing import Dict, Any, List, Optional
-try:
-    import GPUtil
-except ImportError:
-    GPUtil = None
+# GPUtil removed for serverless compatibility
+GPUtil = None
 
 logger = logging.getLogger(__name__)
 
