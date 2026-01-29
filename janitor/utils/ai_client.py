@@ -170,6 +170,58 @@ class OllamaProvider(AIProvider):
         except Exception:
             return False
 
+class GroqProvider(AIProvider):
+    """Groq API provider."""
+    
+    def __init__(self, api_key: str, model: str = "llama3-70b-8192"):
+        """Initialize with API key and model."""
+        self.api_key = api_key
+        # Default to a strong model on Groq if not specified via env
+        self.model = model
+        self.logger = logging.getLogger(__name__)
+    
+    def complete(self, prompt: str, max_tokens: int, 
+                 temperature: float) -> str:
+        """Generate completion using Groq API."""
+        try:
+            from groq import Groq
+            client = Groq(api_key=self.api_key)
+            
+            # Groq implementation of system prompt
+            split_prompt = prompt.split("## Refactored Code:")
+            system_content = split_prompt[0] if split_prompt else prompt
+            
+            completion = client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_content},
+                    {"role": "user", "content": "## Refactored Code:"}
+                ],
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=1,
+                stream=False,
+                stop=None,
+            )
+            
+            return completion.choices[0].message.content or ""
+            
+        except ImportError:
+            raise ImportError("Groq package not installed. Run: pip install groq")
+        except Exception as e:
+            self.logger.error(f"Groq API error: {e}")
+            raise
+    
+    def health_check(self) -> bool:
+        """Check if Groq API is accessible."""
+        try:
+            from groq import Groq
+            client = Groq(api_key=self.api_key)
+            client.models.list()
+            return True
+        except Exception:
+            return False
+
 
 class AIClient:
     """Unified client for AI providers."""
@@ -199,6 +251,10 @@ class AIClient:
         if provider_type == "anthropic":
             api_key = self.ai_config.api_key or self._get_env_key("ANTHROPIC_API_KEY")
             return AnthropicProvider(api_key, self.ai_config.model)
+            
+        if provider_type == "groq":
+            api_key = self.ai_config.api_key or self._get_env_key("GROQ_API_KEY")
+            return GroqProvider(api_key, self.ai_config.model)
         
         if provider_type == "ollama":
             return OllamaProvider(model=self.ai_config.model)

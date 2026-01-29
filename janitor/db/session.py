@@ -21,7 +21,17 @@ def get_db_url():
         return url
     
     # Default to local SQLite
-    db_path = Path("janitor.db").absolute()
+    # Check if current directory is writable
+    try:
+        # Try creating a dummy file to test writability
+        test_file = Path(".write_test")
+        test_file.touch()
+        test_file.unlink()
+        db_path = Path("janitor.db").absolute()
+    except (OSError, PermissionError):
+        # Fallback to /tmp which is usually writable in serverless/cloud envs
+        db_path = Path("/tmp/janitor.db")
+    
     return f"sqlite:///{db_path}"
 
 # Create engine
