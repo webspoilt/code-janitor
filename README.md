@@ -1,177 +1,165 @@
-# Code Janitor
+<div align="center">
 
-Automated Code Refactoring Tool with AI capabilities.
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:3776AB,50:FFD43B,100:3776AB&height=200&section=header&text=Code%20Janitor&fontSize=70&fontColor=fff&animation=fadeIn&fontAlignY=35&desc=AI-Powered%20Code%20Refactoring%20Tool&descAlignY=55&descSize=16"/>
 
-## Overview
+[![Python](https://img.shields.io/badge/Python-89.3%25-3776AB?style=for-the-badge&logo=python&logoColor=white)]()
+[![HTML](https://img.shields.io/badge/HTML-10.7%25-E34F26?style=for-the-badge&logo=html5&logoColor=white)]()
+[![AI](https://img.shields.io/badge/AI-Enabled-FF006E?style=for-the-badge)]()
+[![Live Demo](https://img.shields.io/badge/Live_Demo-00C853?style=for-the-badge)](https://code-janitor-sigma.vercel.app)
 
-Code Janitor is an intelligent CLI tool that combines static analysis with LLM capabilities to automatically detect, analyze, and clean up problematic code. It identifies code smells, security vulnerabilities, and performance issues, then leverages AI to refactor and optimize the codebase while maintaining functional correctness.
+**Clean Code. Automatically.**
 
-## Features
+</div>
 
-- **Multi-phase Analysis**: Parsing, linting, static analysis, and AI transformation
-- **Code Smell Detection**: Identifies deep nesting, long functions, dead code, and duplicates
-- **Security Scanning**: Detects potential vulnerabilities like SQL injection, hardcoded secrets
-- **AI Refactoring**: Uses large language models for intelligent code improvements
-- **Validation Loop**: Self-healing validation ensures refactored code is correct
-- **Backup & Rollback**: Automatic backups with easy rollback capability
-- **Multi-language Support**: Starting with Python (JavaScript/TypeScript planned)
+---
 
-## Installation
+## 🎯 Overview
+
+Code Janitor is an intelligent CLI tool that combines **static analysis** with **LLM capabilities** to automatically detect, analyze, and clean up problematic code. It identifies code smells, security vulnerabilities, and performance issues, then leverages AI to refactor and optimize the codebase while maintaining functional correctness.
+
+---
+
+## ✨ Features
+
+### 🔍 Multi-phase Analysis
+| Phase | Description |
+|-------|-------------|
+| **Parsing** | AST-based code understanding |
+| **Linting** | Style and best practice checks |
+| **Static Analysis** | Deep code quality assessment |
+| **AI Transformation** | Intelligent refactoring suggestions |
+
+### 🛡️ Code Smell Detection
+- Deep nesting detection
+- Long function identification
+- Dead code elimination
+- Duplicate code detection
+- Complexity analysis
+
+### 🔒 Security Scanning
+- SQL injection vulnerabilities
+- Hardcoded secrets detection
+- XSS vulnerability identification
+- Insecure dependency checks
+
+### 🤖 AI Refactoring
+- Uses Large Language Models for intelligent improvements
+- Maintains functional correctness
+- Generates human-readable code
+- Explains changes made
+
+---
+
+## 🚀 Quick Start
 
 ```bash
-# Clone the repository
-git clone <repository-url>
+# Clone repository
+git clone https://github.com/webspoilt/code-janitor.git
 cd code-janitor
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Install in development mode
-pip install -e .
+# Setup environment
+cp .env.example .env
+# Add your OpenAI API key to .env
+
+# Run on a file
+python app.py clean path/to/your/file.py
+
+# Run on a directory
+python app.py clean path/to/project/ --recursive
 ```
 
-## Configuration
+---
 
-Create a `janitor.yaml` configuration file:
+## 📊 Configuration
+
+Create `janitor.yaml` in your project root:
 
 ```yaml
-linter:
-  enabled: true
-  auto_fix: true
-  max_line_length: 120
-
-analyzer:
+# Code Janitor Configuration
+analysis:
+  max_function_length: 50
   max_nesting_depth: 4
-  max_function_lines: 50
   max_cyclomatic_complexity: 10
 
+security:
+  check_secrets: true
+  check_sql_injection: true
+  check_xss: true
+
 ai:
-  provider: openai  # openai, anthropic, ollama
   model: gpt-4
-  temperature: 0.2
+  temperature: 0.3
+  max_tokens: 2000
+
+ignore:
+  - "**/tests/**"
+  - "**/venv/**"
+  - "**/__pycache__/**"
 ```
 
-Set your API key:
+---
 
-```bash
-export OPENAI_API_KEY="your-api-key"
-# or
-export ANTHROPIC_API_KEY="your-api-key"
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Code Input                            │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+        ┌─────────────────┼─────────────────┐
+        │                 │                 │
+┌───────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐
+│   Parser     │  │   Linter    │  │    AST      │
+│              │  │             │  │   Analyzer  │
+└───────┬──────┘  └──────┬──────┘  └──────┬──────┘
+        │                │                │
+        └────────────────┼────────────────┘
+                         │
+              ┌──────────▼──────────┐
+              │   Issue Detection   │
+              └──────────┬──────────┘
+                         │
+              ┌──────────▼──────────┐
+              │   AI Refactoring    │
+              │   (LLM Pipeline)    │
+              └──────────┬──────────┘
+                         │
+              ┌──────────▼──────────┐
+              │   Validation Loop   │
+              └──────────┬──────────┘
+                         │
+              ┌──────────▼──────────┐
+              │   Clean Code Output │
+              └─────────────────────┘
 ```
 
-## Usage
+---
 
-### Check Code (Analysis Only)
+## 🌐 Live Demo
 
-```bash
-# Analyze a single file
-janitor check src/app.py
+Try Code Janitor online: **[code-janitor-sigma.vercel.app](https://code-janitor-sigma.vercel.app)**
 
-# Analyze a directory
-janitor check src/
+---
 
-# Output as JSON
-janitor check src/ --format json
-```
+## 🤝 Contributing
 
-### Clean and Refactor
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-```bash
-# Clean and refactor a file
-janitor clean src/app.py
+---
 
-# Show diff of changes
-janitor clean src/app.py --diff
+## 📄 License
 
-# Preview without applying changes
-janitor clean src/app.py --dry-run
+MIT License - see [LICENSE](LICENSE)
 
-# Clean entire directory
-janitor clean src/
-```
+---
 
-## Architecture
+<div align="center">
 
-### Phase 1: Parsing and Linting
+**Built with 🤖 by [webspoilt](https://github.com/webspoilt)**
 
-The first phase reads and validates input code at the most basic level. It parses the code into an Abstract Syntax Tree (AST) and applies linting rules to catch syntax errors, style violations, and obvious anti-patterns.
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:3776AB,50:FFD43B,100:3776AB&height=100&section=footer"/>
 
-**Tools**: Ruff, Black, or generic AST-based analysis
-
-### Phase 2: Static Analysis
-
-The second phase performs deeper analysis to identify potential security vulnerabilities, complex logic, and performance issues. Static analysis tools examine the code without executing it.
-
-**Tools**: AST-based analysis, security pattern matching
-
-### Phase 3: AI Transformation
-
-The third phase leverages large language models to intelligently refactor code based on issues identified in previous phases. The AI receives a carefully crafted prompt with the original code, analysis report, and specific instructions.
-
-**Providers**: OpenAI (GPT-4), Anthropic (Claude), Ollama (local models)
-
-### Validation Loop
-
-After AI refactoring, the tool validates the output through:
-1. Syntax checking
-2. Linting
-3. Static analysis
-4. Safety rule verification
-
-If validation fails, the AI attempts self-repair. After maximum retries, it rolls back to the original code.
-
-## Supported Code Smells
-
-- **Deep Nesting**: Functions with excessive nested conditionals/loops
-- **Long Functions**: Functions exceeding line thresholds
-- **Dead Code**: Unused variables, functions, or unreachable code
-- **High Complexity**: Functions with high cyclomatic complexity
-- **Security Issues**: SQL injection, hardcoded secrets, dangerous functions
-
-## API Integration
-
-### OpenAI
-
-```yaml
-ai:
-  provider: openai
-  model: gpt-4
-  temperature: 0.2
-```
-
-### Anthropic
-
-```yaml
-ai:
-  provider: anthropic
-  model: claude-sonnet-4-20250514
-  temperature: 0.2
-```
-
-### Ollama (Local)
-
-```yaml
-ai:
-  provider: ollama
-  model: llama3
-```
-
-## Development
-
-```bash
-# Run tests
-pytest
-
-# Type checking
-mypy janitor/
-
-# Format code
-black janitor/
-
-# Lint
-ruff check janitor/
-```
-
-## License
-
-MIT License - see LICENSE file for details.
+</div>
